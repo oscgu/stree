@@ -3,17 +3,16 @@
 #include <stdlib.h>
 
 typedef struct {
-    char foldercol[16];
-    char filecol[16];
-    char symlinkcol[16];
-    char hardlinkcol[16];
-    char binarycol[16];
+        char foldercol[16];
+        char filecol[16];
+        char symlinkcol[16];
+        char hardlinkcol[16];
+        char binarycol[16];
 } Theme;
 
 static unsigned char depth = 4;
 
 static void readdir(const char *dirname);
-
 
 void
 showhelp()
@@ -29,7 +28,7 @@ showhelp()
 int
 main(int argc, char *argv[])
 {
-        #include "config.h"
+#include "config.h"
         printf("%shallo\033[0m\n", theme.foldercol);
 
         if (argc == 1) {
@@ -38,7 +37,7 @@ main(int argc, char *argv[])
         }
 
         int opt;
-        while ((opt = getopt(argc, argv, "d:cs:")) != 1) {
+        while ((opt = getopt(argc, argv, "d:csh")) != 1) {
                 switch (opt) {
                 case 'd':
                         printf("Option d has arg: %s\n", optarg);
@@ -47,6 +46,9 @@ main(int argc, char *argv[])
                         break;
                 case 's':
                         break;
+                case 'h':
+                        showhelp();
+                        exit(0);
                 case '?':
                         printf("Unkown option: %c\n", optopt);
                         exit(1);
