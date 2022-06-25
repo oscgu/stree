@@ -3,29 +3,38 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
-#define maxdepth 4
 #define THROW_SIZE_ERR(req)                                                   \
 {                                                                     \
     fprintf(stderr, "Dest must hold atleast '%ld' chars\n", req); \
     exit(1);                                                      \
 }
 
-/* Example output
-   |_ Folder
-   |    |_ File
-   |
-   |_ File
-   |
-   |_Folder
-   |_Folder
-   |_File
-   |_File
-   |_Folder
-   |_File
-   */
+typedef struct {
+    char foldercol[16];
+    char filecol[16];
+    char symlinkcol[16];
+    char hardlinkcol[16];
+    char binarycol[16];
+} Theme;
 
-    void
+short maxdepth = 15;
+
+/* config  */
+#include "config.h"
+
+static void checkdirname(char* dirname, unsigned int len)
+{
+    if (dirname[len-1] == '/') {
+        return;
+    }
+
+    dirname[len] = '/';
+    dirname[len+1] = '\0';
+}
+
+    static void
 strnjoin(const char *first, const char *sec, char *dest, int destsize)
 {
     unsigned long firstlen = strlen(first);
@@ -41,19 +50,50 @@ strnjoin(const char *first, const char *sec, char *dest, int destsize)
     dest[firstlen + seclen] = '\0';
 }
 
-typedef struct {
-    char foldercol[16];
-    char filecol[16];
-    char symlinkcol[16];
-    char hardlinkcol[16];
-    char binarycol[16];
-} Theme;
+    static void
+printbranch(const char *text, int level, int type)
+{
+    for (int i=0; i<level; i++)
+    {
+        printf("   ");
+    }
 
-   static void
+    char *col = "\033[0m";
+    char *reset = "\033[0m";
+
+    switch(type) {
+        case DT_DIR:
+            col = theme.foldercol;
+            break;
+        case DT_REG:
+            col = theme.filecol;
+            break;
+        case DT_LNK:
+            col = theme.symlinkcol;
+            break;
+        case DT_FIFO:
+            col = theme.symlinkcol;
+            break;
+        case DT_BLK:
+            /* Fallthrough  */
+        case DT_CHR:
+            /* Fallthrough  */
+        case DT_SOCK:
+            /* Fallthrough  */
+        case DT_UNKNOWN:
+            break;
+    }
+    printf("%s%s%s%s%s\n", vert, hori, col, text, reset);
+}
+
+    static void
 analysedir(const char *dirname, int level)
 {
+    if (level >= maxdepth) return;
+
     struct dirent *dir;
     DIR *dp = opendir(dirname);
+    int dirlvl;
 
     while ((dir = readdir(dp)) != NULL) {
         if (strstr(dir->d_name, ".") || strstr(dir->d_name, "..")) {
@@ -62,34 +102,35 @@ analysedir(const char *dirname, int level)
 
         switch (dir->d_type) {
             case DT_DIR:
-                /* Scan dir again and print before continuing
-                 * pass level
-                 */ 
-                printf("%s is a dir of dir %s\n", dir->d_name, dirname);
-                char fulldirname[256 * maxdepth];
+                dirlvl = level;
+                printbranch(dir->d_name, level, DT_DIR);
+
+                char fulldirname[1024];
                 strnjoin(dirname, dir->d_name, fulldirname, sizeof(fulldirname));
-                analysedir(fulldirname, level++);
+
+                checkdirname(fulldirname, strlen(fulldirname));
+                analysedir(fulldirname, ++dirlvl);
                 break;
             case DT_REG:
-                printf("%s is a file of dir %s\n", dir->d_name, dirname);
+                printbranch(dir->d_name, level, DT_REG);
                 break;
             case DT_LNK:
-                printf("%s is a symlink\n", dir->d_name);
+                printbranch(dir->d_name, level, DT_LNK);
                 break;
             case DT_FIFO:
-                printf("%s is a named pipe\n", dir->d_name);
+                printbranch(dir->d_name, level, DT_FIFO);
                 break;
             case DT_BLK:
-                printf("%s is a block dev\n", dir->d_name);
+                printbranch(dir->d_name, level, DT_BLK);
                 break;
             case DT_CHR:
-                printf("%s is a char dev\n", dir->d_name);
+                printbranch(dir->d_name, level, DT_CHR);
                 break;
             case DT_SOCK:
-                printf("%s is a socket\n", dir->d_name);
+                printbranch(dir->d_name, level, DT_SOCK);
                 break;
             case DT_UNKNOWN:
-                printf("%s is unknown\n", dir->d_name);
+                printbranch(dir->d_name, level, DT_UNKNOWN);
                 break;
         }
     }
@@ -102,50 +143,65 @@ showhelp()
     printf("\
             Usage: stree [options]\n\
             Options:\n\
+            <string>                Directory path\n\
             -d <number>             Folder depth\n\
             -c                      Disable color\n\
             -s                      Show file size\n\
-            -p <string>             Directory path\n");
+            -f                      Find file\n");
+}
+
+void
+getcurrdir(char *buff)
+{
+
 }
 
     int
 main(int argc, char *argv[])
 {
-#include "config.h"
-    printf("%shallo\033[0m\n", theme.foldercol);
-
     if (argc == 1) {
-        printf("do stuff w/o options\n");
+        char currdir[256];
+        getcwd(currdir, 256);
+        checkdirname(currdir, strlen(currdir));
+        analysedir(currdir, 0);
         exit(1);
     }
 
     int opt;
+    char dir[256];
     while ((opt = getopt(argc, argv, "d:cshp:")) != 1) {
         switch (opt) {
             case 'd':
-                printf("Option d has arg: %s\n", optarg);
-                break;
+                maxdepth = *optarg - '0';
+                char currdir[256];
+                getcwd(currdir, 256);
+                checkdirname(currdir, strlen(currdir));
+                analysedir(currdir, 0);
+                goto exit;
             case 'c':
-                break;
+                goto exit;
             case 's':
-                break;
+                goto exit;
             case 'h':
                 showhelp();
-                exit(0);
+                goto exit;
             case 'p':
-                analysedir(optarg, 0);
-                exit(0);
+                strcpy(dir, optarg);
+                checkdirname(dir, strlen(dir));
+                analysedir(dir, 0);
+                goto exit;
             case '?':
                 printf("Unkown option: %c\n", optopt);
-                exit(1);
+                goto exit;
             case ':':
                 printf("Missing arg for %c\n", optopt);
-                exit(1);
+                goto exit;
             default:
-                printf("%s\n", argv[1]);
-                exit(0);
+                checkdirname(argv[1], strlen(argv[1]));
+                analysedir(argv[1], 0);
+                goto exit;
         }
     }
-
+exit:
     return 0;
 }
