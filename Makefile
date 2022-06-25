@@ -1,2 +1,2 @@
-stree: stree.c
-	cc -o $@ $^ -Os -s -Wall -pedantic
+stree: stree.c config.h
+	cc -o $@ $< -Os -s -Wall -pedantic
