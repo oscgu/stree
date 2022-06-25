@@ -1,4 +1,5 @@
 *.o
 stree
 *.out
-test/
+test
+testdir/
