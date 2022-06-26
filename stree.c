@@ -50,37 +50,14 @@ strnjoin(const char *first, const char *sec, char *dest, int destsize)
 }
 
 static void
-printbranch(const char *text, int level, int type)
+printbranch(const char *text, int level, const char *col)
 {
         for (int i = 0; i < level; i++) {
                 printf("   ");
         }
 
-        char *col = "\033[0m";
         char *reset = "\033[0m";
 
-        switch (type) {
-        case DT_DIR:
-                col = theme.foldercol;
-                break;
-        case DT_REG:
-                col = theme.filecol;
-                break;
-        case DT_LNK:
-                col = theme.symlinkcol;
-                break;
-        case DT_FIFO:
-                col = theme.symlinkcol;
-                break;
-        case DT_BLK:
-                /* Fallthrough  */
-        case DT_CHR:
-                /* Fallthrough  */
-        case DT_SOCK:
-                /* Fallthrough  */
-        case DT_UNKNOWN:
-                break;
-        }
         printf("%s%s%s%s%s\n", vert, hori, col, text, reset);
 }
 
@@ -101,7 +78,7 @@ analysedir(const char *dirname, int level)
                 switch (dir->d_type) {
                 case DT_DIR:
                         dirlvl = level;
-                        printbranch(dir->d_name, level, DT_DIR);
+                        printbranch(dir->d_name, level, theme.foldercol);
 
                         char fulldirname[1024];
                         strnjoin(dirname, dir->d_name, fulldirname,
@@ -111,25 +88,25 @@ analysedir(const char *dirname, int level)
                         analysedir(fulldirname, ++dirlvl);
                         break;
                 case DT_REG:
-                        printbranch(dir->d_name, level, DT_REG);
+                        printbranch(dir->d_name, level, theme.filecol);
                         break;
                 case DT_LNK:
-                        printbranch(dir->d_name, level, DT_LNK);
+                        printbranch(dir->d_name, level, theme.symlinkcol);
                         break;
                 case DT_FIFO:
-                        printbranch(dir->d_name, level, DT_FIFO);
+                        printbranch(dir->d_name, level, theme.symlinkcol);
                         break;
                 case DT_BLK:
-                        printbranch(dir->d_name, level, DT_BLK);
+                        printbranch(dir->d_name, level, theme.filecol);
                         break;
                 case DT_CHR:
-                        printbranch(dir->d_name, level, DT_CHR);
+                        printbranch(dir->d_name, level, theme.filecol);
                         break;
                 case DT_SOCK:
-                        printbranch(dir->d_name, level, DT_SOCK);
+                        printbranch(dir->d_name, level, theme.filecol);
                         break;
                 case DT_UNKNOWN:
-                        printbranch(dir->d_name, level, DT_UNKNOWN);
+                        printbranch(dir->d_name, level, theme.filecol);
                         break;
                 }
         }
