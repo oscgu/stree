@@ -71,7 +71,7 @@ analysedir(const char *dirname, int level)
         int dirlvl;
 
         while ((dir = readdir(dp)) != NULL) {
-                if (strstr(dir->d_name, ".") || strstr(dir->d_name, "..")) {
+                if (!strcmp(dir->d_name, ".") || !strcmp(dir->d_name, "..")) {
                         continue;
                 }
 
@@ -108,6 +108,8 @@ analysedir(const char *dirname, int level)
                 case DT_UNKNOWN:
                         printbranch(dir->d_name, level, theme.filecol);
                         break;
+                        default:
+                        printf("%s\n", dir->d_name);
                 }
         }
         closedir(dp);
