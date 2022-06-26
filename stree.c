@@ -115,7 +115,7 @@ analysedir(const char *dirname, int level)
         closedir(dp);
 }
 
-void
+static void
 showhelp()
 {
         printf("\
@@ -128,10 +128,6 @@ showhelp()
             -f                      Find file\n");
 }
 
-void
-getcurrdir(char *buff)
-{
-}
 
 int
 main(int argc, char *argv[])
