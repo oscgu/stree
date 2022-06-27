@@ -5,12 +5,16 @@
 #include <string.h>
 #include <unistd.h>
 
+/* macros */
 #define THROW_SIZE_ERR(req)                                                   \
         {                                                                     \
                 fprintf(stderr, "Dest must hold atleast '%ld' chars\n", req); \
                 exit(1);                                                      \
         }
 
+#define MAX_DIR_NAME 256
+
+/* structs */
 typedef struct {
         char foldercol[16];
         char filecol[16];
@@ -19,13 +23,16 @@ typedef struct {
         char binarycol[16];
 } Theme;
 
-short maxdepth = 15;
+/* global */
+static short maxdepth = 15; /* default value */
+static char dirnbuff[_POSIX_PATH_MAX] = {0};
 
 /* config  */
 #include "config.h"
 
+/* function implementations */
 static void
-checkdirname(char *dirname, unsigned int len)
+chkdirname(char *dirname, unsigned int len)
 {
         if (dirname[len - 1] == '/') { return; }
 
@@ -68,6 +75,11 @@ analysedir(const char *dirname, int level)
 
         struct dirent *dir;
         DIR *dp = opendir(dirname);
+        if (!dp) {
+                fprintf(stderr, "Cannot open file %s\n", dirname);
+                return;
+        }
+
         int dirlvl;
 
         while ((dir = readdir(dp)) != NULL) {
@@ -80,12 +92,11 @@ analysedir(const char *dirname, int level)
                         dirlvl = level;
                         printbranch(dir->d_name, level, theme.foldercol);
 
-                        char fulldirname[1024];
-                        strnjoin(dirname, dir->d_name, fulldirname,
-                                 sizeof(fulldirname));
-
-                        checkdirname(fulldirname, strlen(fulldirname));
-                        analysedir(fulldirname, ++dirlvl);
+                        char recdirnbuff[_POSIX_PATH_MAX];
+                        strnjoin(dirname, dir->d_name, recdirnbuff,
+                                 sizeof(recdirnbuff));
+                        chkdirname(recdirnbuff, strlen(recdirnbuff));
+                        analysedir(recdirnbuff, ++dirlvl);
                         break;
                 case DT_REG:
                         printbranch(dir->d_name, level, theme.filecol);
@@ -108,12 +119,19 @@ analysedir(const char *dirname, int level)
                 case DT_UNKNOWN:
                         printbranch(dir->d_name, level, theme.filecol);
                         break;
-                        default:
-                        printf("%s\n", dir->d_name);
                 }
         }
         closedir(dp);
 }
+
+static void
+analysecurrdir()
+{
+        getcwd(dirnbuff, 256);
+        chkdirname(dirnbuff, strlen(dirnbuff));
+        analysedir(dirnbuff, 0);
+}
+
 
 static void
 showhelp()
@@ -128,28 +146,20 @@ showhelp()
             -f                      Find file\n");
 }
 
-
 int
 main(int argc, char *argv[])
 {
         if (argc == 1) {
-                char currdir[256];
-                getcwd(currdir, 256);
-                checkdirname(currdir, strlen(currdir));
-                analysedir(currdir, 0);
+                analysecurrdir();
                 exit(1);
         }
 
         int opt;
-        char dir[256];
         while ((opt = getopt(argc, argv, "d:cshp:")) != 1) {
                 switch (opt) {
                 case 'd':
                         maxdepth = *optarg - '0';
-                        char currdir[256];
-                        getcwd(currdir, 256);
-                        checkdirname(currdir, strlen(currdir));
-                        analysedir(currdir, 0);
+                        analysecurrdir();
                         goto exit;
                 case 'c':
                         goto exit;
@@ -159,18 +169,18 @@ main(int argc, char *argv[])
                         showhelp();
                         goto exit;
                 case 'p':
-                        strcpy(dir, optarg);
-                        checkdirname(dir, strlen(dir));
-                        analysedir(dir, 0);
+                        strcpy(dirnbuff, optarg);
+                        chkdirname(dirnbuff, strlen(dirnbuff));
+                        analysedir(dirnbuff, 0);
                         goto exit;
                 case '?':
                         printf("Unkown option: %c\n", optopt);
                         goto exit;
                 case ':':
-                        printf("Missing arg for %c\n", optopt);
+                        printf("Missing arg for -%c\n", optopt);
                         goto exit;
                 default:
-                        checkdirname(argv[1], strlen(argv[1]));
+                        chkdirname(argv[1], strlen(argv[1]));
                         analysedir(argv[1], 0);
                         goto exit;
                 }
