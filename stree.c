@@ -23,6 +23,18 @@ typedef struct {
         char binarycol[16];
 } Theme;
 
+/* enums */
+typedef enum {
+        SHELL,
+        BASH,
+        ZSH,
+        FISH,
+        ASH,
+        BINARY,
+        UNKNOWN
+} ExeType;
+
+
 /* global */
 static short maxdepth = 15; /* default value */
 static char dirnbuff[_POSIX_PATH_MAX] = {0};
@@ -68,6 +80,36 @@ printbranch(const char *text, int level, const char *col)
         printf("%s%s%s%s%s\n", vert, hori, col, text, reset);
 }
 
+static ExeType
+getexetype(const char *path)
+{
+        FILE *fp = fopen(path, "r");
+        if (!fp) {
+                fprintf(stderr, "Cannot open %s\n", path);
+        }
+        
+        char lineBuff[256];
+        ExeType exeType = UNKNOWN;
+
+        fgets(lineBuff, sizeof(lineBuff), fp);
+
+        if (strstr(lineBuff, "#!/bin/bash")) {
+                exeType = BASH;
+        }
+        if (strstr(lineBuff, "#!/bin/ash")) {
+                exeType = ASH;
+        }
+        if (strstr(lineBuff, "#!/bin/zsh")) {
+                exeType = ZSH;
+        }
+        if (strstr(lineBuff, "ELF")) {
+                exeType = BINARY;
+        }
+
+        fclose(fp);
+        return exeType;
+}
+
 static void
 analysedir(const char *dirname, int level)
 {
@@ -79,7 +121,6 @@ analysedir(const char *dirname, int level)
                 fprintf(stderr, "Cannot open dir%s\n", dirname);
                 return;
         }
-
         int dirlvl;
 
         while ((dir = readdir(dp)) != NULL) {
