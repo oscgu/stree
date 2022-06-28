@@ -76,7 +76,7 @@ analysedir(const char *dirname, int level)
         struct dirent *dir;
         DIR *dp = opendir(dirname);
         if (!dp) {
-                fprintf(stderr, "Cannot open file %s\n", dirname);
+                fprintf(stderr, "Cannot open dir%s\n", dirname);
                 return;
         }
 
@@ -132,18 +132,15 @@ analysecurrdir()
         analysedir(dirnbuff, 0);
 }
 
-
 static void
 showhelp()
 {
         printf("\
             Usage: stree [options]\n\
             Options:\n\
-            <string>                Directory path\n\
-            -d <number>             Folder depth\n\
-            -c                      Disable color\n\
-            -s                      Show file size\n\
-            -f                      Find file\n");
+            -h                      Show help menu\n\
+            <path>                  Directory to display\n\
+            -d <int>                Folder depth\n");
 }
 
 int
@@ -160,10 +157,6 @@ main(int argc, char *argv[])
                 case 'd':
                         maxdepth = *optarg - '0';
                         analysecurrdir();
-                        goto exit;
-                case 'c':
-                        goto exit;
-                case 's':
                         goto exit;
                 case 'h':
                         showhelp();
