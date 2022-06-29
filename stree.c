@@ -12,8 +12,6 @@
                 exit(1);                                                      \
         }
 
-#define MAX_DIR_NAME 256
-
 /* structs */
 typedef struct {
         char foldercol[16];
