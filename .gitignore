@@ -3,3 +3,4 @@ stree
 *.out
 test
 testdir/
+tags
