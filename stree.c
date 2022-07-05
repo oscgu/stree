@@ -32,7 +32,6 @@ typedef enum {
         UNKNOWN
 } ExeType;
 
-
 /* global */
 static short maxdepth = 15; /* default value */
 static char dirnbuff[_POSIX_PATH_MAX] = {0};
@@ -220,3 +219,4 @@ main(int argc, char *argv[])
 exit:
         return 0;
 }
+
