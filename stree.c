@@ -7,10 +7,10 @@
 
 /* macros */
 #define THROW_SIZE_ERR(req)                                                   \
-        {                                                                     \
-                fprintf(stderr, "Dest must hold atleast '%ld' chars\n", req); \
-                exit(1);                                                      \
-        }
+{                                                                     \
+        fprintf(stderr, "Dest must hold atleast '%ld' chars\n", req); \
+        exit(1);                                                      \
+}
 
 /* structs */
 typedef struct {
@@ -34,13 +34,14 @@ typedef enum {
 
 /* global */
 static short maxdepth = 15; /* default value */
+static short maxroots = 100; /* default value */
 static char dirnbuff[_POSIX_PATH_MAX] = {0};
 
 /* config  */
 #include "config.h"
 
 /* function implementations */
-static void
+        static void
 chkdirname(char *dirname, unsigned int len)
 {
         if (dirname[len - 1] == '/') { return; }
@@ -49,7 +50,7 @@ chkdirname(char *dirname, unsigned int len)
         dirname[len + 1] = '\0';
 }
 
-static void
+        static void
 strnjoin(const char *first, const char *sec, char *dest, int destsize)
 {
         unsigned long firstlen = strlen(first);
@@ -65,7 +66,7 @@ strnjoin(const char *first, const char *sec, char *dest, int destsize)
         dest[firstlen + seclen] = '\0';
 }
 
-static void
+        static void
 printbranch(const char *text, int level, const char *col)
 {
         for (int i = 0; i < level; i++) {
@@ -77,14 +78,14 @@ printbranch(const char *text, int level, const char *col)
         printf("%s%s%s%s%s\n", vert, hori, col, text, reset);
 }
 
-static ExeType
+        static ExeType
 getexetype(const char *path)
 {
         FILE *fp = fopen(path, "r");
         if (!fp) {
                 fprintf(stderr, "Cannot open %s\n", path);
         }
-        
+
         char lineBuff[256];
         ExeType exeType = UNKNOWN;
 
@@ -107,7 +108,7 @@ getexetype(const char *path)
         return exeType;
 }
 
-static void
+        static void
 analysedir(const char *dirname, int level)
 {
         if (level >= maxdepth) return;
@@ -126,43 +127,42 @@ analysedir(const char *dirname, int level)
                 }
 
                 switch (dir->d_type) {
-                case DT_DIR:
-                        dirlvl = level;
-                        printbranch(dir->d_name, level, theme.foldercol);
-
-                        char recdirnbuff[_POSIX_PATH_MAX];
-                        strnjoin(dirname, dir->d_name, recdirnbuff,
-                                 sizeof(recdirnbuff));
-                        chkdirname(recdirnbuff, strlen(recdirnbuff));
-                        analysedir(recdirnbuff, ++dirlvl);
-                        break;
-                case DT_REG:
-                        printbranch(dir->d_name, level, theme.filecol);
-                        break;
-                case DT_LNK:
-                        printbranch(dir->d_name, level, theme.symlinkcol);
-                        break;
-                case DT_FIFO:
-                        printbranch(dir->d_name, level, theme.symlinkcol);
-                        break;
-                case DT_BLK:
-                        printbranch(dir->d_name, level, theme.filecol);
-                        break;
-                case DT_CHR:
-                        printbranch(dir->d_name, level, theme.filecol);
-                        break;
-                case DT_SOCK:
-                        printbranch(dir->d_name, level, theme.filecol);
-                        break;
-                case DT_UNKNOWN:
-                        printbranch(dir->d_name, level, theme.filecol);
-                        break;
+                        case DT_DIR:
+                                printbranch(dir->d_name, level, theme.foldercol);
+                                dirlvl = level;
+                                char recdirnbuff[_POSIX_PATH_MAX];
+                                strnjoin(dirname, dir->d_name, recdirnbuff,
+                                                sizeof(recdirnbuff));
+                                chkdirname(recdirnbuff, strlen(recdirnbuff));
+                                analysedir(recdirnbuff, ++dirlvl);
+                                break;
+                        case DT_REG:
+                                printbranch(dir->d_name, level, theme.filecol);
+                                break;
+                        case DT_LNK:
+                                printbranch(dir->d_name, level, theme.symlinkcol);
+                                break;
+                        case DT_FIFO:
+                                printbranch(dir->d_name, level, theme.symlinkcol);
+                                break;
+                        case DT_BLK:
+                                printbranch(dir->d_name, level, theme.filecol);
+                                break;
+                        case DT_CHR:
+                                printbranch(dir->d_name, level, theme.filecol);
+                                break;
+                        case DT_SOCK:
+                                printbranch(dir->d_name, level, theme.filecol);
+                                break;
+                        case DT_UNKNOWN:
+                                printbranch(dir->d_name, level, theme.filecol);
+                                break;
                 }
         }
         closedir(dp);
 }
 
-static void
+        static void
 analysecurrdir()
 {
         getcwd(dirnbuff, 256);
@@ -170,53 +170,43 @@ analysecurrdir()
         analysedir(dirnbuff, 0);
 }
 
-static void
+        static void
 showhelp()
 {
         printf("\
-            Usage: stree [options]\n\
-            Options:\n\
-            -h                      Show help menu\n\
-            <path>                  Directory to display\n\
-            -d <int>                Folder depth\n");
+                        Usage: stree [options]\n\
+                        Options:\n\
+                        <path>                  Directory to display\n\
+                        -h                      Show help menu\n\
+                        -d <int>                Folder depth\n\
+                        -n <int>                Amount of roots\n");
 }
 
-int
+        int
 main(int argc, char *argv[])
 {
-        if (argc == 1) {
-                analysecurrdir();
-                exit(1);
-        }
-
-        int opt;
-        while ((opt = getopt(argc, argv, "d:cshp:")) != 1) {
+        char opt;
+        while ((opt = getopt(argc, argv, "d:cshp:n:")) != -1) {
                 switch (opt) {
-                case 'd':
-                        maxdepth = *optarg - '0';
-                        analysecurrdir();
-                        goto exit;
-                case 'h':
-                        showhelp();
-                        goto exit;
-                case 'p':
-                        strcpy(dirnbuff, optarg);
-                        chkdirname(dirnbuff, strlen(dirnbuff));
-                        analysedir(dirnbuff, 0);
-                        goto exit;
-                case '?':
-                        printf("Unkown option: %c\n", optopt);
-                        goto exit;
-                case ':':
-                        printf("Missing arg for -%c\n", optopt);
-                        goto exit;
-                default:
-                        chkdirname(argv[1], strlen(argv[1]));
-                        analysedir(argv[1], 0);
-                        goto exit;
+                        /*
+                         * Dont directly call methods from here to allow multiple args
+                         *
+                         */
+                        case 'd':
+                                maxdepth = *optarg - '0';
+                                break;
+                        case 'h':
+                                showhelp();
+                                return 0;
+                        case 'n':
+                                maxroots = *optarg - '0';
+                                break;
+                        case '?': return 1;
+                        case ':': return 1;
+                        default: return 1;
                 }
         }
-exit:
+        analysedir(argv[optind], 0);
         return 0;
 }
 
