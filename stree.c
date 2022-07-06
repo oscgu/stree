@@ -6,7 +6,7 @@
 #include <unistd.h>
 
 /* macros */
-#define THROW_SIZE_ERR(req)                                                   \
+#define THROW_SIZE_ERR(req)                                           \
 {                                                                     \
         fprintf(stderr, "Dest must hold atleast '%ld' chars\n", req); \
         exit(1);                                                      \
@@ -33,8 +33,9 @@ typedef enum {
 } ExeType;
 
 /* global */
-static short maxdepth = 15; /* default value */
-static short maxroots = 100; /* default value */
+static int maxdepth = 15; /* default value */
+static int maxroots = 100; /* default value */
+static int roots = 0;
 static char dirnbuff[_POSIX_PATH_MAX] = {0};
 
 /* config  */
@@ -112,6 +113,7 @@ getexetype(const char *path)
 analysedir(const char *dirname, int level)
 {
         if (level >= maxdepth) return;
+        printf("Level: %d\n", level);
 
         struct dirent *dir;
         DIR *dp = opendir(dirname);
@@ -186,18 +188,15 @@ showhelp()
 main(int argc, char *argv[])
 {
         char opt;
-        while ((opt = getopt(argc, argv, "d:cshp:n:")) != -1) {
+
+        while ((opt = getopt(argc, argv, "d:cshn:")) != -1) {
                 switch (opt) {
-                        /*
-                         * Dont directly call methods from here to allow multiple args
-                         *
-                         */
-                        case 'd':
-                                maxdepth = *optarg - '0';
-                                break;
                         case 'h':
                                 showhelp();
                                 return 0;
+                        case 'd':
+                                maxdepth = *optarg - '0';
+                                break;
                         case 'n':
                                 maxroots = *optarg - '0';
                                 break;
@@ -206,7 +205,16 @@ main(int argc, char *argv[])
                         default: return 1;
                 }
         }
-        analysedir(argv[optind], 0);
+
+        for (; optind < argc; optind++) {
+                strncpy(dirnbuff, argv[optind], sizeof(dirnbuff));
+                chkdirname(dirnbuff, strlen(dirnbuff));
+                analysedir(dirnbuff, 0);
+                return 0;
+        }
+
+        analysecurrdir();
+
         return 0;
 }
 
