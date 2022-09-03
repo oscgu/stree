@@ -25,11 +25,32 @@ typedef struct {
 static int maxdepth = 15;  /* default value */
 static int maxroots = 100; /* default value */
 static char dirnbuff[_POSIX_PATH_MAX] = {0};
+static char *ignore[10] = {0};
+static int ignoreCount = 0;
+static int cleaned;
 
 /* config  */
 #include "config.h"
 
 /* function implementations */
+static int
+isCleaned()
+{
+        return cleaned == ignoreCount;
+}
+
+static int
+isIgnored(char *name)
+{
+        int i;
+
+        for (i = 0; i < ignoreCount; i++) {
+                if (!strcmp(ignore[i], name)) { return 1; }
+        }
+
+        return 0;
+}
+
 static void
 chkdirname(char *dirname, unsigned int len)
 {
@@ -82,7 +103,8 @@ analysedir(const char *dirname, int level)
         int rootcnt = 0;
 
         while ((dir = readdir(dp)) != NULL) {
-                if (!strcmp(dir->d_name, ".") || !strcmp(dir->d_name, "..")) {
+                if (!strcmp(dir->d_name, ".") || !strcmp(dir->d_name, "..") ||
+                    isCleaned() || isIgnored(dir->d_name)) {
                         continue;
                 }
 
@@ -118,9 +140,7 @@ analysedir(const char *dirname, int level)
                         printbranch(dir->d_name, level, theme.filecol);
                         break;
                 }
-                if (++rootcnt == maxroots) {
-                    return;
-                }
+                if (++rootcnt == maxroots) { return; }
         }
         closedir(dp);
 }
@@ -141,8 +161,9 @@ showhelp()
                         Options:\n\
                         <path>                  Directory to display\n\
                         -h                      Show help menu\n\
-                        -d <int>                Folder depth\n\
-                        -r <int>                Amount of roots\n");
+                        -d <num>                Folder depth\n\
+                        -r <num>                Amount of roots\n\
+                        -i <num>                Ignore files (max. 10)");
 }
 
 int
@@ -150,7 +171,7 @@ main(int argc, char *argv[])
 {
         char opt;
 
-        while ((opt = getopt(argc, argv, "d:cshr:")) != -1) {
+        while ((opt = getopt(argc, argv, "d:cshr:i:")) != -1) {
                 switch (opt) {
                 case 'h':
                         showhelp();
@@ -160,6 +181,9 @@ main(int argc, char *argv[])
                         break;
                 case 'r':
                         maxroots = *optarg - '0';
+                        break;
+                case 'i':
+                        ignore[ignoreCount++] = optarg;
                         break;
                 case '?':
                         return 1;
