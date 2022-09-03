@@ -27,21 +27,15 @@ static int maxroots = 100; /* default value */
 static char dirnbuff[_POSIX_PATH_MAX] = {0};
 static char *ignore[10] = {0};
 static int ignoreCount = 0;
-static int cleaned;
 
 /* config  */
 #include "config.h"
 
 /* function implementations */
 static int
-isCleaned()
-{
-        return cleaned == ignoreCount;
-}
-
-static int
 isIgnored(char *name)
 {
+        if (!ignoreCount) return 0;
         int i;
 
         for (i = 0; i < ignoreCount; i++) {
@@ -103,8 +97,7 @@ analysedir(const char *dirname, int level)
         int rootcnt = 0;
 
         while ((dir = readdir(dp)) != NULL) {
-                if (!strcmp(dir->d_name, ".") || !strcmp(dir->d_name, "..") ||
-                    isCleaned() || isIgnored(dir->d_name)) {
+                if (!strcmp(dir->d_name, ".") || !strcmp(dir->d_name, "..") || isIgnored(dir->d_name)) {
                         continue;
                 }
 
@@ -163,7 +156,7 @@ showhelp()
                         -h                      Show help menu\n\
                         -d <num>                Folder depth\n\
                         -r <num>                Amount of roots\n\
-                        -i <num>                Ignore files (max. 10)");
+                        -i <num>                Ignore files (max. 10)\n");
 }
 
 int
