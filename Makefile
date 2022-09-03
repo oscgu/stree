@@ -9,6 +9,14 @@ OBJ = stree.o
 stree: $(OBJ)
 	$(CC) -o $@ $^ $(CFLAGS)
 
-.PHONY: clean
+install: stree
+	cp -f stree /bin
+	chmod 755 /bin/stree
+
+uninstall:
+	rm -f /bin/stree
+
 clean:
 	rm -rf *.o
+
+.PHONY: clean
