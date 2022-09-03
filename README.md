@@ -4,7 +4,7 @@ Just like the `tree` command, but simpler
 
 ## building
 
-Run `make` in sourcedir
+`sudo make install`
 
 ## Usage
 
