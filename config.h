@@ -5,6 +5,8 @@ static Theme theme = {
     "\033[35m",   /* symlinks */
     "\033[30m",   /* hardlinks */
     "\033[36m",   /* binaries */
+    "\033[36m",   /* sockets */
+    "\033[36m",   /* unknown */
 };
 
 /* Style  */

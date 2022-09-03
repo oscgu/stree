@@ -142,7 +142,7 @@ showhelp()
                         <path>                  Directory to display\n\
                         -h                      Show help menu\n\
                         -d <int>                Folder depth\n\
-                        -n <int>                Amount of roots\n");
+                        -r <int>                Amount of roots\n");
 }
 
 int
@@ -150,7 +150,7 @@ main(int argc, char *argv[])
 {
         char opt;
 
-        while ((opt = getopt(argc, argv, "d:cshn:")) != -1) {
+        while ((opt = getopt(argc, argv, "d:cshr:")) != -1) {
                 switch (opt) {
                 case 'h':
                         showhelp();
@@ -158,7 +158,7 @@ main(int argc, char *argv[])
                 case 'd':
                         maxdepth = *optarg - '0';
                         break;
-                case 'n':
+                case 'r':
                         maxroots = *optarg - '0';
                         break;
                 case '?':
