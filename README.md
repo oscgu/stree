@@ -8,7 +8,7 @@ Just like the `tree` command, but simpler
 
 ## Usage
 
-`
+```
     Usage: stree [options]
     Options:
     <path>                  Directory to display
@@ -16,5 +16,4 @@ Just like the `tree` command, but simpler
     -d <num>                Folder depth
     -r <num>                Amount of roots
     -i <num>                Ignore files (max. 10)
-`
-
+```
